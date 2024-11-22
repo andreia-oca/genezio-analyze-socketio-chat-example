@@ -10,6 +10,8 @@ import { Cluster } from 'ioredis';
 const functionInstanceId = Math.floor(Math.random() * 10000);
 console.log('Started with instance id ' + functionInstanceId);
 
+// MongoDB Setup
+console.log("Connecting to MongoDB at " + process.env['MY_MONGODB_DATABASE_URL']);
 mongoose.connect(process.env['MY_MONGODB_DATABASE_URL']);
 
 const messageSchema = new mongoose.Schema(
@@ -36,6 +38,7 @@ const app = express();
 const server = createServer(app);
 
 // Redis Cluster Setup with Upstash Redis URL
+console.log("Connecting to Redis at " + process.env.UPSTASH_REDIS_URL);
 const pubCluster = new Cluster([{
   url: process.env.UPSTASH_REDIS_URL
 }]);
