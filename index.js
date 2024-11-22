@@ -3,21 +3,26 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Server } from 'socket.io';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import mongoose from 'mongoose'
 
-const db = await open({
-  filename: 'chat.db',
-  driver: sqlite3.Database
+mongoose.connect(process.env["CHATROOM_DATABASE_URL"]);
+
+const messageSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    unique: true,
+    required: true
+  },
+  content: String,
+  clientOffset: {
+    type: String,
+    unique: true
+  }
+}, {
+  timestamps: true
 });
 
-await db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    client_offset TEXT UNIQUE,
-    content TEXT
-  );
-`);
+const Message = mongoose.model('Message', messageSchema);
 
 const app = express();
 const server = createServer(app);
@@ -36,29 +41,31 @@ io.on('connection', async (socket) => {
   socket.on('chat message', async (msg, clientOffset, callback) => {
     let result;
     try {
-      result = await db.run('INSERT INTO messages (content, client_offset) VALUES (?, ?)', msg, clientOffset);
+      const message = new Message({
+        id: await Message.findOne().sort('-id').then(lastMsg => (lastMsg?.id || 0) + 1),
+        content: msg,
+        clientOffset
+      });
+      result = await message.save();
     } catch (e) {
-      if (e.errno === 19 /* SQLITE_CONSTRAINT */ ) {
-        callback();
-      } else {
-        // nothing to do, just let the client retry
-      }
+      console.error(e);
+      callback();
       return;
     }
-    io.emit('chat message', msg, result.lastID);
+    io.emit('chat message', msg, result.id);
     callback();
   });
 
   if (!socket.recovered) {
     try {
-      await db.each('SELECT id, content FROM messages WHERE id > ?',
-        [socket.handshake.auth.serverOffset || 0],
-        (_err, row) => {
-          socket.emit('chat message', row.content, row.id);
-        }
-      )
+      const messages = await Message.find({
+        id: { $gt: socket.handshake.auth.serverOffset || 0 }
+      });
+      messages.forEach(message => {
+        socket.emit('chat message', message.content, message.id);
+      });
     } catch (e) {
-      // something went wrong
+      console.error(e);
     }
   }
 });
