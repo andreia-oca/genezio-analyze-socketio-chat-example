@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import { createAdapter } from 'socket.io-redis';
+import { Cluster } from 'ioredis';
+
 
 mongoose.connect(process.env['MY_MONGODB_DATABASE_URL']);
 
@@ -30,11 +33,16 @@ const Message = mongoose.model('Message', messageSchema);
 const functionInstanceId = Math.floor(Math.random() * 10000);
 console.log('Started with instance id ' + functionInstanceId);
 
+// Redis Cluster Setup with Upstash Redis URL
+const redisCluster = new Cluster([{
+  url: process.env.UPSTASH_REDIS_URL
+}]);
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   connectionStateRecovery: {},
-  // adapter: createAdapter()
+  adapter: createAdapter(redisCluster)
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
