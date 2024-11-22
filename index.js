@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose'
 
-mongoose.connect(process.env["CHATROOM_DATABASE_URL"]);
+mongoose.connect(process.env["MY_MONGODB_DATABASE_URL"]);
 
 const messageSchema = new mongoose.Schema({
   id: {
