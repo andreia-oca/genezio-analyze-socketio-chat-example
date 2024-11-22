@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Cluster } from 'ioredis';
+import Redis from "ioredis"
 
 const functionInstanceId = Math.floor(Math.random() * 10000);
 console.log('Started with instance id ' + functionInstanceId);
@@ -39,9 +39,7 @@ const server = createServer(app);
 
 // Redis Cluster Setup with Upstash Redis URL
 console.log("Connecting to Redis at " + process.env.UPSTASH_REDIS_URL);
-const pubCluster = new Cluster([{
-  url: process.env.UPSTASH_REDIS_URL
-}]);
+const pubCluster = new Redis(process.env.UPSTASH_REDIS_URL);
 const subCluster = pubCluster.duplicate();
 
 // Add error handlers
