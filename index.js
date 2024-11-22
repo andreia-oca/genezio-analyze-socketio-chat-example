@@ -41,6 +41,10 @@ const pubCluster = new Cluster([{
 }]);
 const subCluster = pubCluster.duplicate();
 
+// Add error handlers
+pubCluster.on('error', (err) => console.error('Redis Pub Client Error:', err));
+subCluster.on('error', (err) => console.error('Redis Sub Client Error:', err));
+
 // Create Socket.IO server and add Redis adapter
 const io = new Server(server, {
   connectionStateRecovery: {},
