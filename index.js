@@ -27,7 +27,7 @@ const messageSchema = new mongoose.Schema(
 
 const Message = mongoose.model('Message', messageSchema);
 
-const functionInstanceId = Math.floow(Math.random() * 10000);
+const functionInstanceId = Math.floor(Math.random() * 10000);
 console.log('Started with instance id ' + functionInstanceId);
 
 const app = express();
